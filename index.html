@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Incident Summary</title>
+
+  <link rel="stylesheet" href="https://js.arcgis.com/4.34/esri/themes/light/main.css" />
+  <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+  <script src="https://js.arcgis.com/4.34/"></script>
+
+  <style>
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #222;
+    }
+
+    #app {
+      width: 100vw;
+      height: 100vh;
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr) 390px;
+      grid-template-rows: minmax(0, 1fr);
+      overflow: hidden;
+    }
+
+    #sidebar, #operationsPanel {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      min-height: 0;
+      height: 100%;
+      overflow: hidden;
+      background: #fff;
+      z-index: 2;
+    }
+
+    #sidebar {
+      border-right: 1px solid #cfcfcf;
+    }
+
+    #operationsPanel {
+      border-left: 1px solid #cfcfcf;
+    }
+
+    #header {
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    #header h1 {
+      margin: 0 0 4px;
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    #header .subtitle {
+      font-size: 12px;
+      color: #666;
+    }
+
+    #filters {
+      flex: 1 1 auto;
+      min-height: 0;
+      padding: 10px 12px;
+      overflow-y: auto;
+      background: #fff;
+    }
+
+    .filter-block { margin-bottom: 9px; }
+
+    .filter-title {
+      margin-bottom: 5px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #555;
+    }
+
+    select, input[type="date"] {
+      box-sizing: border-box;
+      border: 1px solid #bbb;
+      border-radius: 3px;
+      background: white;
+      padding: 6px;
+      font-size: 13px;
+    }
+
+    select { width: 100%; }
+    select[multiple] { height: 78px; min-height: 78px; }
+
+    .custom-date-range {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .custom-date-range input { width: 100%; min-width: 0; }
+
+    .hint {
+      margin-top: 3px;
+      font-size: 10px;
+      line-height: 1.2;
+      color: #777;
+    }
+
+    #filterActions { display: flex; gap: 8px; }
+
+    button {
+      border: 1px solid #888;
+      background: #f6f6f6;
+      border-radius: 3px;
+      padding: 7px 11px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    button.primary, button.panel-tab.active {
+      color: #fff;
+      background: #007ac2;
+      border-color: #007ac2;
+    }
+
+    button:hover { filter: brightness(0.97); }
+    button:disabled { opacity: 0.55; cursor: default; }
+
+    #opsSummary {
+      flex: 0 0 auto;
+      padding: 12px;
+      border-bottom: 1px solid #ddd;
+      background: #fafafa;
+    }
+
+    .ops-title {
+      margin: 0 0 9px;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #555;
+    }
+
+    .ops-stat {
+      display: grid;
+      grid-template-columns: 88px minmax(0, 1fr);
+      gap: 8px;
+      margin: 5px 0;
+      font-size: 12px;
+      line-height: 1.3;
+    }
+
+    .ops-stat-label { color: #666; }
+    .ops-stat-value { font-weight: 700; overflow-wrap: anywhere; }
+
+    #panelTabs {
+      flex: 0 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+      padding: 9px 10px;
+      border-bottom: 1px solid #ddd;
+      background: #fff;
+    }
+
+    .panel-tab { width: 100%; }
+
+    #incidentPanel, #logPanel {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #logPanel[hidden], #incidentPanel[hidden] { display: none; }
+
+    #resultsHeader, #logHeader {
+      flex: 0 0 auto;
+      padding: 9px 12px;
+      border-bottom: 1px solid #ddd;
+      background: #f7f7f7;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    #resultsHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    #downloadCsvBtn {
+      flex: 0 0 auto;
+      padding: 5px 9px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    #kpiPanel {
+      flex: 0 0 auto;
+      max-height: 46%;
+      overflow-y: auto;
+      border-bottom: 1px solid #ddd;
+      background: #fff;
+      padding: 10px 12px 8px;
+    }
+
+    .geography-summary {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+      margin-bottom: 9px;
+    }
+
+    .kpi-card {
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 7px 8px;
+      background: #fafafa;
+    }
+
+    .kpi-label { font-size: 10px; color: #666; text-transform: uppercase; font-weight: 700; }
+    .kpi-value { margin-top: 2px; font-size: 14px; font-weight: 700; overflow-wrap: anywhere; }
+    .chart-block { height: 185px; margin-top: 8px; }
+    .chart-title { font-size: 12px; font-weight: 700; color: #444; margin: 0 0 4px; }
+    .chart-wrap { position: relative; height: 160px; overflow: hidden; }
+    #categoryChart { overflow-y: auto; padding-right: 4px; }
+    .hbar-row { display: grid; grid-template-columns: 118px minmax(0, 1fr) 38px; gap: 6px; align-items: center; margin: 5px 0; font-size: 10px; }
+    .hbar-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #444; }
+    .hbar-track { height: 11px; background: #eef1f4; border-radius: 2px; overflow: hidden; }
+    .hbar-fill { height: 100%; background: #4f81bd; min-width: 1px; }
+    .hbar-value { text-align: right; font-weight: 700; color: #333; }
+    .chart-empty { height: 100%; display: flex; align-items: center; justify-content: center; color: #777; font-size: 11px; }
+    .trend-svg { width: 100%; height: 100%; display: block; }
+    .trend-grid { stroke: #e3e6e8; stroke-width: 1; }
+    .trend-axis { stroke: #aeb4b9; stroke-width: 1; }
+    .trend-line { fill: none; stroke: #4f81bd; stroke-width: 2; }
+    .trend-point { fill: #4f81bd; }
+    .trend-label { fill: #666; font-size: 9px; }
+    .trend-value { fill: #444; font-size: 9px; font-weight: 700; }
+
+    #incidentList, #logList {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+
+    .incident {
+      padding: 11px 12px;
+      border-bottom: 1px solid #e5e5e5;
+      cursor: pointer;
+      transition: background 0.12s ease;
+    }
+
+    .incident:hover { background: #f3f8fc; }
+
+    .incident.selected {
+      background: #e3f2fd;
+      border-left: 4px solid #007ac2;
+      padding-left: 8px;
+    }
+
+    .incident-id { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .incident-address { font-size: 13px; margin-bottom: 4px; line-height: 1.25; }
+    .incident-meta { font-size: 12px; color: #666; line-height: 1.35; }
+
+    .log-card {
+      padding: 12px;
+      border-bottom: 1px solid #e5e5e5;
+    }
+
+    .log-card-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: baseline;
+      margin-bottom: 5px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .log-status {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #555;
+    }
+
+    .log-date {
+      margin-bottom: 7px;
+      font-size: 11px;
+      color: #777;
+    }
+
+    .log-summary {
+      margin: 0;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 11px;
+      line-height: 1.42;
+      color: #333;
+    }
+
+    #status {
+      flex: 0 0 auto;
+      padding: 8px 12px;
+      border-top: 1px solid #ddd;
+      font-size: 12px;
+      color: #666;
+      min-height: 16px;
+      background: #fff;
+    }
+
+    #viewDiv {
+      width: 100%;
+      height: 100%;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .empty {
+      padding: 20px;
+      color: #666;
+      text-align: center;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    @media (max-width: 1100px) {
+      #app { grid-template-columns: 285px minmax(0, 1fr) 340px; }
+    }
+
+    @media (max-height: 700px) {
+      #header { padding-top: 8px; padding-bottom: 7px; }
+      #header h1 { font-size: 17px; }
+      #filters { padding-top: 7px; padding-bottom: 7px; }
+      select[multiple] { height: 64px; min-height: 64px; }
+      .filter-block { margin-bottom: 6px; }
+      #opsSummary { padding-top: 8px; padding-bottom: 8px; }
+    }
+  </style>
+</head>
+
+<body>
+<div id="app">
+  <aside id="sidebar">
+    <div id="header">
+      <h1>NERIS Incident Viewer</h1>
+      <div class="subtitle">Fire Service Incidents</div>
+    </div>
+    <div id="filters"></div>
+  </aside>
+
+  <main id="viewDiv"></main>
+
+  <aside id="operationsPanel">
+    <div id="opsSummary">
+      <div class="ops-title">ETL Publication Status</div>
+      <div class="ops-stat">
+        <div class="ops-stat-label">Last update</div>
+        <div class="ops-stat-value" id="lastUpdate">Loading…</div>
+      </div>
+      <div class="ops-stat">
+        <div class="ops-stat-label">Total records</div>
+        <div class="ops-stat-value" id="totalRecords">Loading…</div>
+      </div>
+    </div>
+
+    <div id="panelTabs">
+      <button id="incidentsTab" class="panel-tab active" type="button">Incidents</button>
+      <button id="logsTab" class="panel-tab" type="button">ETL Logs</button>
+    </div>
+
+    <section id="incidentPanel">
+      <div id="kpiPanel">
+        <div class="chart-title" id="geographySummaryTitle">Geographic Summary of Incidents</div>
+        <div class="geography-summary" id="geographySummary"></div>
+        <div class="chart-block">
+          <div class="chart-title" id="categoryChartTitle">Fire Incidents by Category</div>
+          <div class="chart-wrap" id="categoryChart"></div>
+        </div>
+        <div class="chart-block">
+          <div class="chart-title" id="trendChartTitle">Monthly Fire Incident Trend</div>
+          <div class="chart-wrap" id="trendChart"></div>
+        </div>
+      </div>
+      <div id="resultsHeader">
+        <span>Incidents: <span id="resultCount">0</span></span>
+        <button id="downloadCsvBtn" type="button" disabled>Download CSV</button>
+      </div>
+      <div id="incidentList"></div>
+    </section>
+
+    <section id="logPanel" hidden>
+      <div id="logHeader">Latest ETL Run Summaries</div>
+      <div id="logList"></div>
+    </section>
+
+    <div id="status">Loading…</div>
+  </aside>
+</div>
+
+<script src="./app.js"></script>
+</body>
+</html>
