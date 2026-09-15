@@ -273,13 +273,14 @@
     }
 
     function buildMarkerSymbol(symbolConfig = {}) {
-      // Lightweight local PNG marker. This bypasses WebStyle/CIM rendering.
+      // Lightweight local PNG marker. No WebStyle/CIM conversion.
       if (symbolConfig.url) {
+        const size = symbolConfig.size ?? 24;
         return {
           type: "picture-marker",
           url: symbolConfig.url,
-          width: symbolConfig.width ?? symbolConfig.size ?? 22,
-          height: symbolConfig.height ?? symbolConfig.size ?? 22
+          width: `${size}px`,
+          height: `${size}px`
         };
       }
 
@@ -314,9 +315,9 @@
       }
 
       if (rendererConfig.type === "unique_value") {
-        if (!rendererConfig.field && !rendererConfig.value_expression) {
+        if (!rendererConfig.field) {
           console.warn(
-            "Unique-value renderer requires map.renderer.field or map.renderer.value_expression. " +
+            "Unique-value renderer requires map.renderer.field. " +
             "Falling back to the hosted layer renderer."
           );
           return undefined;
@@ -326,9 +327,7 @@
 
         return {
           type: "unique-value",
-          ...(rendererConfig.value_expression
-            ? { valueExpression: rendererConfig.value_expression }
-            : { field: rendererConfig.field }),
+          field: rendererConfig.field,
           defaultSymbol: buildMarkerSymbol(defaultConfig),
           defaultLabel: defaultConfig.label || "Other",
           uniqueValueInfos: (rendererConfig.values || []).map(item => ({
