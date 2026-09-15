@@ -178,6 +178,21 @@ geography:
   selector_label: "Senate Name"
   all_label: "All Senate Districts"
 
+  # Polygon styling. Change these values without editing app.js.
+  polygon_style:
+    fill_color: "#007ac2"
+    fill_opacity: 0.04
+    outline_color: "#007ac2"
+    outline_opacity: 0.55
+    outline_width: 0.8
+
+  selected_polygon_style:
+    fill_color: "#007ac2"
+    fill_opacity: 0.04
+    outline_color: "#007ac2"
+    outline_opacity: 0.85
+    outline_width: 1.6
+
   display_fields:
     - field: "county"
       label: "County"

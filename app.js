@@ -20,8 +20,9 @@
   require([
     "esri/Map",
     "esri/views/MapView",
-    "esri/layers/FeatureLayer"
-  ], (ArcGISMap, MapView, FeatureLayer) => {
+    "esri/layers/FeatureLayer",
+    "esri/Graphic"
+  ], (ArcGISMap, MapView, FeatureLayer, Graphic) => {
 
     const layer = new FeatureLayer({
       url: config.data.service_url,
@@ -39,6 +40,23 @@
     });
 
     const geographyConfig = config.geography || config.community || {};
+    const polygonStyle = geographyConfig.polygon_style || {};
+    const selectedPolygonStyle = geographyConfig.selected_polygon_style || {};
+
+    function hexToRgba(hex, opacity, fallback) {
+      const value = String(hex || "").trim().replace(/^#/, "");
+      const normalized = value.length === 3
+        ? value.split("").map(ch => ch + ch).join("")
+        : value;
+      if (!/^[0-9a-fA-F]{6}$/.test(normalized)) return fallback;
+      return [
+        parseInt(normalized.slice(0, 2), 16),
+        parseInt(normalized.slice(2, 4), 16),
+        parseInt(normalized.slice(4, 6), 16),
+        opacity
+      ];
+    }
+
     const geographyLayer = geographyConfig.service_url
       ? new FeatureLayer({
           url: geographyConfig.service_url,
@@ -47,8 +65,19 @@
             type: "simple",
             symbol: {
               type: "simple-fill",
-              color: [0, 122, 194, 0.04],
-              outline: { color: [0, 122, 194, 0.55], width: 0.8 }
+              color: hexToRgba(
+                polygonStyle.fill_color,
+                polygonStyle.fill_opacity ?? 0.04,
+                [0, 122, 194, 0.04]
+              ),
+              outline: {
+                color: hexToRgba(
+                  polygonStyle.outline_color,
+                  polygonStyle.outline_opacity ?? 0.55,
+                  [0, 122, 194, 0.55]
+                ),
+                width: polygonStyle.outline_width ?? 0.8
+              }
             }
           }
         })
@@ -102,6 +131,7 @@
     let logsLoaded = false;
     let geographyControl = null;
     let selectedGeographyFeature = null;
+    let selectedGeographyGraphic = null;
     
     function setActivePanel(panelName) {
       const showLogs = panelName === "logs";
@@ -1356,6 +1386,34 @@
         const where = buildWhere();
         selectedGeographyFeature = await getSelectedGeography();
         const geographyGeometry = selectedGeographyFeature?.geometry || null;
+
+        // Draw the selected geography using YAML-configurable styling.
+        if (selectedGeographyGraphic) {
+          view.graphics.remove(selectedGeographyGraphic);
+          selectedGeographyGraphic = null;
+        }
+        if (geographyGeometry) {
+          selectedGeographyGraphic = new Graphic({
+            geometry: geographyGeometry,
+            symbol: {
+              type: "simple-fill",
+              color: hexToRgba(
+                selectedPolygonStyle.fill_color,
+                selectedPolygonStyle.fill_opacity ?? 0.04,
+                [0, 122, 194, 0.04]
+              ),
+              outline: {
+                color: hexToRgba(
+                  selectedPolygonStyle.outline_color,
+                  selectedPolygonStyle.outline_opacity ?? 0.85,
+                  [0, 122, 194, 0.85]
+                ),
+                width: selectedPolygonStyle.outline_width ?? 1.6
+              }
+            }
+          });
+          view.graphics.add(selectedGeographyGraphic);
+        }
 
         layer.definitionExpression = where;
         const layerView = await view.whenLayerView(layer);
