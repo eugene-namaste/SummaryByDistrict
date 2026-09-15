@@ -30,9 +30,23 @@ map:
 
   renderer:
     type: "unique_value"
-    field: "CRR_SUBCATEGORY"
 
-    # Any unmapped value remains visible as a lightweight native point.
+    # Normalize CRR_SUBCATEGORY variants in the browser so the renderer is
+    # tolerant of spaces/underscores and small wording differences.
+    value_expression: |
+      var v = Upper(Trim(DefaultValue($feature.CRR_SUBCATEGORY, "")));
+      v = Replace(v, "_", " ");
+      v = Replace(v, "-", " ");
+
+      if (Find("MOTOR VEHICLE FIRE", v) >= 0 || Find("VEHICLE FIRE", v) >= 0) return "MOTOR_VEHICLE_FIRE";
+      if (Find("MOTOR VEHICLE ACCIDENT", v) >= 0 || Find("VEHICLE ACCIDENT", v) >= 0 || Find("MVA", v) >= 0) return "VEHICLE_ACCIDENT";
+      if (Find("BUILDING FIRE", v) >= 0 || Find("STRUCTURE FIRE", v) >= 0) return "BUILDING_FIRE";
+      if (Find("COOKING FIRE", v) >= 0 || Find("COOKING", v) >= 0) return "COOKING_FIRE";
+      if (Find("WILDFIRE", v) >= 0 || Find("WILD FIRE", v) >= 0 || Find("WILDLAND", v) >= 0 || Find("VEGETATION FIRE", v) >= 0) return "WILDFIRE";
+      if (Find("LIFT ASSIST", v) >= 0 || Find("FALL", v) >= 0) return "LIFT_ASSIST";
+      if (Find("ALARM MALFUNCTION", v) >= 0 || Find("ALARM", v) >= 0) return "ALARM_MALFUNCTION";
+      return "OTHER";
+
     default_symbol:
       label: "Other"
       style: "circle"
@@ -41,43 +55,41 @@ map:
       outline_color: "#ffffff"
       outline_width: 0.5
 
-    # Local PNG symbols: no WebStyle/CIM lookup or rendering.
     values:
-      - value: "Building Fire"
+      - value: "BUILDING_FIRE"
         label: "Building Fire"
-        image: "./symbols/building_fire.png"
-        size: 24
+        url: "./symbols/building_fire.png"
+        size: 22
 
-      - value: "Cooking Fire"
+      - value: "COOKING_FIRE"
         label: "Cooking Fire"
-        image: "./symbols/cooking_fire.png"
-        size: 24
+        url: "./symbols/cooking_fire.png"
+        size: 22
 
-      - value: "Motor Vehicle Fire"
+      - value: "MOTOR_VEHICLE_FIRE"
         label: "Motor Vehicle Fire"
-        image: "./symbols/motor_vehicle_fire.png"
-        size: 24
+        url: "./symbols/motor_vehicle_fire.png"
+        size: 22
 
-      - value: "Wildfire"
+      - value: "WILDFIRE"
         label: "Wildfire"
-        image: "./symbols/wildfire.png"
-        size: 24
+        url: "./symbols/wildfire.png"
+        size: 22
 
-      - value: "Fall / Lift Assist"
+      - value: "LIFT_ASSIST"
         label: "Fall / Lift Assist"
-        image: "./symbols/lift.png"
-        size: 24
+        url: "./symbols/lift.png"
+        size: 22
 
-      - value: "Motor Vehicle Accident"
+      - value: "VEHICLE_ACCIDENT"
         label: "Motor Vehicle Accident"
-        image: "./symbols/vehicle_accident.png"
-        size: 24
+        url: "./symbols/vehicle_accident.png"
+        size: 22
 
-      - value: "Alarm Malfunction"
+      - value: "ALARM_MALFUNCTION"
         label: "Alarm Malfunction"
-        image: "./symbols/alarm.png"
-        size: 24
-
+        url: "./symbols/alarm.png"
+        size: 22
 
 # ------------------------------------------------------------
 # Filters

@@ -273,19 +273,16 @@
     }
 
     function buildMarkerSymbol(symbolConfig = {}) {
-      // Lightweight local PNG marker. This intentionally bypasses WebStyle/CIM
-      // rendering so the browser can cache and reuse a small image asset.
-      if (symbolConfig.image) {
-        const displaySize = symbolConfig.size ?? 24;
+      // Lightweight local PNG marker. This bypasses WebStyle/CIM rendering.
+      if (symbolConfig.url) {
         return {
           type: "picture-marker",
-          url: symbolConfig.image,
-          width: symbolConfig.width || `${displaySize}px`,
-          height: symbolConfig.height || `${displaySize}px`
+          url: symbolConfig.url,
+          width: symbolConfig.width ?? symbolConfig.size ?? 22,
+          height: symbolConfig.height ?? symbolConfig.size ?? 22
         };
       }
 
-      // Native fallback marker (used for Other/unmapped incidents).
       return {
         type: "simple-marker",
         style: symbolConfig.style || "circle",
@@ -317,9 +314,9 @@
       }
 
       if (rendererConfig.type === "unique_value") {
-        if (!rendererConfig.field) {
+        if (!rendererConfig.field && !rendererConfig.value_expression) {
           console.warn(
-            "Unique-value renderer requires map.renderer.field. " +
+            "Unique-value renderer requires map.renderer.field or map.renderer.value_expression. " +
             "Falling back to the hosted layer renderer."
           );
           return undefined;
@@ -329,7 +326,9 @@
 
         return {
           type: "unique-value",
-          field: rendererConfig.field,
+          ...(rendererConfig.value_expression
+            ? { valueExpression: rendererConfig.value_expression }
+            : { field: rendererConfig.field }),
           defaultSymbol: buildMarkerSymbol(defaultConfig),
           defaultLabel: defaultConfig.label || "Other",
           uniqueValueInfos: (rendererConfig.values || []).map(item => ({
