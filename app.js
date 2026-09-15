@@ -45,9 +45,7 @@
 
     function hexToRgba(hex, opacity, fallback) {
       const value = String(hex || "").trim().replace(/^#/, "");
-      const normalized = value.length === 3
-        ? value.split("").map(ch => ch + ch).join("")
-        : value;
+      const normalized = value.length === 3 ? value.split("").map(ch => ch + ch).join("") : value;
       if (!/^[0-9a-fA-F]{6}$/.test(normalized)) return fallback;
       return [
         parseInt(normalized.slice(0, 2), 16),
@@ -57,28 +55,30 @@
       ];
     }
 
+    function polygonSymbol(style, defaults) {
+      return {
+        type: "simple-fill",
+        color: hexToRgba(style.fill_color, style.fill_opacity ?? defaults.fillOpacity, defaults.fill),
+        outline: {
+          color: hexToRgba(style.outline_color, style.outline_opacity ?? defaults.outlineOpacity, defaults.outline),
+          width: style.outline_width ?? defaults.width
+        }
+      };
+    }
+
     const geographyLayer = geographyConfig.service_url
       ? new FeatureLayer({
           url: geographyConfig.service_url,
           outFields: ["*"],
           renderer: {
             type: "simple",
-            symbol: {
-              type: "simple-fill",
-              color: hexToRgba(
-                polygonStyle.fill_color,
-                polygonStyle.fill_opacity ?? 0.04,
-                [0, 122, 194, 0.04]
-              ),
-              outline: {
-                color: hexToRgba(
-                  polygonStyle.outline_color,
-                  polygonStyle.outline_opacity ?? 0.55,
-                  [0, 122, 194, 0.55]
-                ),
-                width: polygonStyle.outline_width ?? 0.8
-              }
-            }
+            symbol: polygonSymbol(polygonStyle, {
+              fillOpacity: 0.04,
+              outlineOpacity: 0.55,
+              width: 0.8,
+              fill: [0, 122, 194, 0.04],
+              outline: [0, 122, 194, 0.55]
+            })
           }
         })
       : null;
@@ -107,6 +107,31 @@
       }
     });
 
+
+    let selectedGeographyGraphic = null;
+
+    function drawSelectedGeography(feature) {
+      // Purely visual overlay. It never changes the geography FeatureLayer renderer
+      // and is intentionally called only after counts/charts finish updating.
+      if (selectedGeographyGraphic) {
+        view.graphics.remove(selectedGeographyGraphic);
+        selectedGeographyGraphic = null;
+      }
+      if (!feature?.geometry) return;
+
+      selectedGeographyGraphic = new Graphic({
+        geometry: feature.geometry,
+        symbol: polygonSymbol(selectedPolygonStyle, {
+          fillOpacity: 0.04,
+          outlineOpacity: 0.85,
+          width: 1.6,
+          fill: [0, 122, 194, 0.04],
+          outline: [0, 122, 194, 0.85]
+        })
+      });
+      view.graphics.add(selectedGeographyGraphic);
+    }
+
     const filtersEl = document.getElementById("filters");
     const listEl = document.getElementById("incidentList");
     const resultCount = document.getElementById("resultCount");
@@ -131,7 +156,6 @@
     let logsLoaded = false;
     let geographyControl = null;
     let selectedGeographyFeature = null;
-    let selectedGeographyGraphic = null;
     
     function setActivePanel(panelName) {
       const showLogs = panelName === "logs";
@@ -1387,34 +1411,6 @@
         selectedGeographyFeature = await getSelectedGeography();
         const geographyGeometry = selectedGeographyFeature?.geometry || null;
 
-        // Draw the selected geography using YAML-configurable styling.
-        if (selectedGeographyGraphic) {
-          view.graphics.remove(selectedGeographyGraphic);
-          selectedGeographyGraphic = null;
-        }
-        if (geographyGeometry) {
-          selectedGeographyGraphic = new Graphic({
-            geometry: geographyGeometry,
-            symbol: {
-              type: "simple-fill",
-              color: hexToRgba(
-                selectedPolygonStyle.fill_color,
-                selectedPolygonStyle.fill_opacity ?? 0.04,
-                [0, 122, 194, 0.04]
-              ),
-              outline: {
-                color: hexToRgba(
-                  selectedPolygonStyle.outline_color,
-                  selectedPolygonStyle.outline_opacity ?? 0.85,
-                  [0, 122, 194, 0.85]
-                ),
-                width: selectedPolygonStyle.outline_width ?? 1.6
-              }
-            }
-          });
-          view.graphics.add(selectedGeographyGraphic);
-        }
-
         layer.definitionExpression = where;
         const layerView = await view.whenLayerView(layer);
         layerView.filter = geographyGeometry ? { geometry: geographyGeometry, spatialRelationship: "intersects" } : null;
@@ -1429,6 +1425,12 @@
         view.closePopup();
         renderList(currentFeatures);
         updateKpis(currentFeatures, selectedGeographyFeature);
+
+        try {
+          drawSelectedGeography(selectedGeographyFeature);
+        } catch (styleErr) {
+          console.warn("Unable to draw selected polygon style:", styleErr);
+        }
 
         if (selectedGeographyFeature?.geometry) {
           try { await view.goTo(selectedGeographyFeature.geometry.extent.expand(1.08), { duration: 650 }); } catch (e) { if (e.name !== "AbortError") console.error(e); }
