@@ -202,7 +202,7 @@ geography:
       label: "Senate Name"
 
 kpi:
-  fire_filter_field: "NERIS_CATEGORY"
+  fire_filter_field: "CRR_CATEGORY"
   fire_filter_value: "FIRE"
   count_label: "Fire Incidents"
   category_field: "CRR_SUBCATEGORY"

@@ -804,6 +804,14 @@
         fields.add(config.list.sort_field);
       }
 
+      // KPI/chart calculations run client-side on the fetched features, so their
+      // source fields must always be included even when they are not shown in
+      // the list, details, or filter controls.
+      const kpi = config.kpi || {};
+      for (const field of [kpi.fire_filter_field, kpi.category_field, kpi.date_field]) {
+        if (field) fields.add(field);
+      }
+
       return [...fields];
     }
 
