@@ -30,8 +30,9 @@ map:
 
   renderer:
     type: "unique_value"
-    field: "NERIS_CATEGORY"
+    field: "CRR_SUBCATEGORY"
 
+    # Any unmapped value remains visible as a lightweight native point.
     default_symbol:
       label: "Other"
       style: "circle"
@@ -40,54 +41,43 @@ map:
       outline_color: "#ffffff"
       outline_width: 0.5
 
+    # Local PNG symbols: no WebStyle/CIM lookup or rendering.
     values:
-      - value: "FIRE"
-        label: "Fire"
-        style: "circle"
-        size: 12
-        color: "#d73027"
-        outline_color: "#ffffff"
-        outline_width: 0.5
+      - value: "Building Fire"
+        label: "Building Fire"
+        image: "./symbols/building_fire.png"
+        size: 24
 
-      - value: "MEDICAL"
-        label: "Medical"
-        style: "circle"
-        size: 7
-        color: "#4575b4"
-        outline_color: "#ffffff"
-        outline_width: 0.5
+      - value: "Cooking Fire"
+        label: "Cooking Fire"
+        image: "./symbols/cooking_fire.png"
+        size: 24
 
-      - value: "RESCUE"
-        label: "Rescue"
-        style: "circle"
-        size: 7
-        color: "#fdae61"
-        outline_color: "#ffffff"
-        outline_width: 0.5
+      - value: "Motor Vehicle Fire"
+        label: "Motor Vehicle Fire"
+        image: "./symbols/motor_vehicle_fire.png"
+        size: 24
 
-      - value: "HAZSIT"
-        label: "Hazardous Situation"
-        style: "circle"
-        size: 7
-        color: "#984ea3"
-        outline_color: "#ffffff"
-        outline_width: 0.5
+      - value: "Wildfire"
+        label: "Wildfire"
+        image: "./symbols/wildfire.png"
+        size: 24
 
-      - value: "PUBSERV"
-        label: "Public Service"
-        style: "circle"
-        size: 7
-        color: "#66a61e"
-        outline_color: "#ffffff"
-        outline_width: 0.5
+      - value: "Fall / Lift Assist"
+        label: "Fall / Lift Assist"
+        image: "./symbols/lift.png"
+        size: 24
 
-      - value: "NOEMERG"
-        label: "Non-Emergency"
-        style: "circle"
-        size: 6
-        color: "#999999"
-        outline_color: "#ffffff"
-        outline_width: 0.5
+      - value: "Motor Vehicle Accident"
+        label: "Motor Vehicle Accident"
+        image: "./symbols/vehicle_accident.png"
+        size: 24
+
+      - value: "Alarm Malfunction"
+        label: "Alarm Malfunction"
+        image: "./symbols/alarm.png"
+        size: 24
+
 
 # ------------------------------------------------------------
 # Filters

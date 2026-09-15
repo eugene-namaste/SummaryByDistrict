@@ -273,6 +273,19 @@
     }
 
     function buildMarkerSymbol(symbolConfig = {}) {
+      // Lightweight local PNG marker. This intentionally bypasses WebStyle/CIM
+      // rendering so the browser can cache and reuse a small image asset.
+      if (symbolConfig.image) {
+        const displaySize = symbolConfig.size ?? 24;
+        return {
+          type: "picture-marker",
+          url: symbolConfig.image,
+          width: symbolConfig.width || `${displaySize}px`,
+          height: symbolConfig.height || `${displaySize}px`
+        };
+      }
+
+      // Native fallback marker (used for Other/unmapped incidents).
       return {
         type: "simple-marker",
         style: symbolConfig.style || "circle",
