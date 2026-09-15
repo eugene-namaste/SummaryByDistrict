@@ -30,9 +30,8 @@ map:
 
   renderer:
     type: "unique_value"
-    field: "CRR_SUBCATEGORY"
+    field: "NERIS_CATEGORY"
 
-    # Anything not explicitly mapped below remains visible as a simple point.
     default_symbol:
       label: "Other"
       style: "circle"
@@ -42,40 +41,53 @@ map:
       outline_width: 0.5
 
     values:
-      - value: "BUILDING_FIRE"
-        label: "Building Fire"
-        url: "./symbols/building_fire.png"
-        size: 60
+      - value: "FIRE"
+        label: "Fire"
+        style: "circle"
+        size: 12
+        color: "#d73027"
+        outline_color: "#ffffff"
+        outline_width: 0.5
 
-      - value: "COOKING_FIRE"
-        label: "Cooking Fire"
-        url: "./symbols/cooking_fire.png"
-        size: 60
+      - value: "MEDICAL"
+        label: "Medical"
+        style: "circle"
+        size: 7
+        color: "#4575b4"
+        outline_color: "#ffffff"
+        outline_width: 0.5
 
-      - value: "MOTOR_VEHICLE_FIRE"
-        label: "Motor Vehicle Fire"
-        url: "./symbols/motor_vehicle_fire.png"
-        size: 60
+      - value: "RESCUE"
+        label: "Rescue"
+        style: "circle"
+        size: 7
+        color: "#fdae61"
+        outline_color: "#ffffff"
+        outline_width: 0.5
 
-      - value: "WILDFIRE"
-        label: "Wildfire"
-        url: "./symbols/wildfire.png"
-        size: 60
+      - value: "HAZSIT"
+        label: "Hazardous Situation"
+        style: "circle"
+        size: 7
+        color: "#984ea3"
+        outline_color: "#ffffff"
+        outline_width: 0.5
 
-      - value: "FALL_LIFT_ASSIST"
-        label: "Fall / Lift Assist"
-        url: "./symbols/lift.png"
-        size: 60
-        
-      - value: "MOTOR_VEHICLE_ACCIDENT"
-        label: "Motor Vehicle Accident"
-        url: "./symbols/vehicle_accident.png"
-        size: 60
+      - value: "PUBSERV"
+        label: "Public Service"
+        style: "circle"
+        size: 7
+        color: "#66a61e"
+        outline_color: "#ffffff"
+        outline_width: 0.5
 
-      - value: "ALARM_MALFUNCTION"
-        label: "Alarm Malfunction"
-        url: "./symbols/alarm.png"
-        size: 60
+      - value: "NOEMERG"
+        label: "Non-Emergency"
+        style: "circle"
+        size: 6
+        color: "#999999"
+        outline_color: "#ffffff"
+        outline_width: 0.5
 
 # ------------------------------------------------------------
 # Filters

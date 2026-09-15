@@ -273,17 +273,6 @@
     }
 
     function buildMarkerSymbol(symbolConfig = {}) {
-      // Lightweight local PNG marker. No WebStyle/CIM conversion.
-      if (symbolConfig.url) {
-        const size = symbolConfig.size ?? 24;
-        return {
-          type: "picture-marker",
-          url: symbolConfig.url,
-          width: `${size}px`,
-          height: `${size}px`
-        };
-      }
-
       return {
         type: "simple-marker",
         style: symbolConfig.style || "circle",
