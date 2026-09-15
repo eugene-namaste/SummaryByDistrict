@@ -45,37 +45,37 @@ map:
       - value: "BUILDING_FIRE"
         label: "Building Fire"
         url: "./symbols/building_fire.png"
-        size: 24
+        size: 60
 
       - value: "COOKING_FIRE"
         label: "Cooking Fire"
         url: "./symbols/cooking_fire.png"
-        size: 24
+        size: 60
 
       - value: "MOTOR_VEHICLE_FIRE"
         label: "Motor Vehicle Fire"
         url: "./symbols/motor_vehicle_fire.png"
-        size: 24
+        size: 60
 
       - value: "WILDFIRE"
         label: "Wildfire"
         url: "./symbols/wildfire.png"
-        size: 24
+        size: 60
 
       - value: "FALL_LIFT_ASSIST"
         label: "Fall / Lift Assist"
         url: "./symbols/lift.png"
-        size: 24
-
+        size: 60
+        
       - value: "MOTOR_VEHICLE_ACCIDENT"
         label: "Motor Vehicle Accident"
         url: "./symbols/vehicle_accident.png"
-        size: 24
+        size: 60
 
       - value: "ALARM_MALFUNCTION"
         label: "Alarm Malfunction"
         url: "./symbols/alarm.png"
-        size: 24
+        size: 60
 
 # ------------------------------------------------------------
 # Filters
