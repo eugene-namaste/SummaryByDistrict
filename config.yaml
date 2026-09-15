@@ -30,7 +30,7 @@ map:
 
   renderer:
     type: "unique_value"
-    field: "NERIS_CATEGORY"
+    field: "CRR_SUBCATEGORY"
 
     default_symbol:
       label: "Other"
@@ -41,51 +41,59 @@ map:
       outline_width: 0.5
 
     values:
-      - value: "FIRE"
-        label: "Fire"
+      - value: "WILDFIRE"
+        label: "Wildfire"
         style: "circle"
         size: 12
         color: "#d73027"
         outline_color: "#ffffff"
         outline_width: 0.5
 
-      - value: "MEDICAL"
-        label: "Medical"
-        style: "circle"
-        size: 7
-        color: "#4575b4"
+      - value: "MOTOR_VEHICLE_FIRE"
+        label: "Motor vehicle fire"
+        style: "triangle"
+        size: 12
+        color: "#d73027"
         outline_color: "#ffffff"
         outline_width: 0.5
 
-      - value: "RESCUE"
-        label: "Rescue"
-        style: "circle"
+      - value: "BUILDING_FIRE"
+        label: "Building fire"
+        style: "square"
+        size: 12
+        color: "#d73027"
+        outline_color: "#ffffff"
+        outline_width: 0.5
+
+      - value: "COOKING_FIRE"
+        label: "Cooking fire"
+        style: "diamond"
+        size: 12
+        color: "#d73027"
+        outline_color: "#ffffff"
+        outline_width: 0.5
+     
+      - value: "FALL_LIFT_ASSIST"
+        label: "Fall lift assist"
+        style: "square"
         size: 7
         color: "#fdae61"
         outline_color: "#ffffff"
         outline_width: 0.5
 
-      - value: "HAZSIT"
+      - value: "MOTOR_VEHICLE_ACCIDENT"
         label: "Hazardous Situation"
-        style: "circle"
-        size: 7
+        style: "triangle"
+        size: 12
         color: "#984ea3"
         outline_color: "#ffffff"
         outline_width: 0.5
 
-      - value: "PUBSERV"
-        label: "Public Service"
+      - value: "ALARM_SYSTEM_MALFUNCTION"
+        label: "Alarm system malfunction"
         style: "circle"
         size: 7
         color: "#66a61e"
-        outline_color: "#ffffff"
-        outline_width: 0.5
-
-      - value: "NOEMERG"
-        label: "Non-Emergency"
-        style: "circle"
-        size: 6
-        color: "#999999"
         outline_color: "#ffffff"
         outline_width: 0.5
 
@@ -203,7 +211,7 @@ list:
     - field: "fulladdr"
       role: "address"
 
-    - field: "NERIS_CATEGORY"
+    - field: "CRR_CATEGORY"
       role: "meta"
 
     - field: "INC_DATE"
@@ -235,11 +243,11 @@ details:
     - field: "ENTITY_NAME"
       label: "Fire Department"
 
-    - field: "NERIS_CATEGORY"
-      label: "NERIS Category"
+    - field: "CRR_CATEGORY"
+      label: "CRR Category"
 
-    - field: "NERIS_SUBCATEGORY"
-      label: "NERIS Subcategory"
+    - field: "CRR_SUBCATEGORY"
+      label: "CRR Subcategory"
 
     - field: "PROP_USE_DESC"
       label: "Property Use"
