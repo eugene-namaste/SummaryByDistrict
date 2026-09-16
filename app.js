@@ -803,27 +803,20 @@
     }
 
     function getCsvColumns() {
+      // The CSV export uses exactly the fields configured for the incident list,
+      // in the same order. Popup/detail and filter fields are intentionally not
+      // appended here, so config.list.fields is the single source of truth.
       const columns = [];
       const seen = new Set();
 
-      function add(field, label, type) {
-        if (!field || seen.has(field)) return;
-        seen.add(field);
-        columns.push({ field, label: label || field, type });
-      }
-
-      // Start with the fields people already see in the list and popup.
       for (const item of config.list?.fields || []) {
-        add(item.field, item.label || item.field, item.type);
-      }
-      for (const item of config.details?.fields || []) {
-        add(item.field, item.label || item.field, item.type);
-      }
-
-      // Include filter fields as well (for example CRR category/subcategory
-      // and fire department), even when they are not displayed in the popup.
-      for (const filter of config.filters || []) {
-        add(filter.field, filter.label || filter.field, undefined);
+        if (!item.field || seen.has(item.field)) continue;
+        seen.add(item.field);
+        columns.push({
+          field: item.field,
+          label: item.label || item.field,
+          type: item.type
+        });
       }
 
       return columns;
