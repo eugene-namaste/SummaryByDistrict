@@ -172,9 +172,9 @@ filters:
 
 geography:
   summary_title: "Geographic Summary of Incidents"
-  label: "Senate District"
-  service_url: "https://services8.arcgis.com/UPC3S4iclp0mZ0N4/arcgis/rest/services/ReferenceLayers/FeatureServer/30"
-  selector_field: "senate_nam"
+  label: "Fire District"
+  service_url: "https://services8.arcgis.com/UPC3S4iclp0mZ0N4/arcgis/rest/services/FireServiceDistricts_view/FeatureServer/0"
+  selector_field: "districtid"
   selector_label: "Senate Name"
   all_label: "All Senate Districts"
 
@@ -194,12 +194,10 @@ geography:
     outline_width: 2.0
 
   display_fields:
-    - field: "county"
-      label: "County"
-    - field: "senate_id"
-      label: "Senate ID"
-    - field: "senate_nam"
-      label: "Senate Name"
+    - field: "districtid"
+      label: "District ID"
+    - field: "name"
+      label: "District Name"
 
 kpi:
   fire_filter_field: "CRR_CATEGORY"
@@ -269,33 +267,6 @@ details:
 
     - field: "ACT_TAK1_DESC"
       label: "Primary Action Taken"
-
-# ------------------------------------------------------------
-# ETL status / log table
-#
-# Publish a non-spatial table in ArcGIS Online and append one
-# summary row per script per run. Set service_url to the table
-# layer URL (FeatureServer/<table id>).
-# ------------------------------------------------------------
-
-operations:
-  logs:
-    service_url: "https://services1.arcgis.com/ejbgqcCL0yNBugWr/arcgis/rest/services/vw_hawaii_etl_run_log/FeatureServer/0"
-    script_field: "SCRIPT_NAME"
-    run_date_field: "RUN_DATE"
-    status_field: "STATUS"
-    summary_field: "SUMMARY"
-    max_records: 100
-
-    scripts:
-      - value: "NERIS_POLLER"
-        label: "NERIS Poller"
-
-      - value: "SQL_LOADER"
-        label: "SQL Loader"
-
-      - value: "AGOL_SYNC"
-        label: "ArcGIS Online Sync"
 
 behavior:
   default_status_text: "Loading..."

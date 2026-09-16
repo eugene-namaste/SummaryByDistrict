@@ -156,19 +156,7 @@
     .ops-stat-label { color: #666; }
     .ops-stat-value { font-weight: 700; overflow-wrap: anywhere; }
 
-    #panelTabs {
-      flex: 0 0 auto;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 7px;
-      padding: 9px 10px;
-      border-bottom: 1px solid #ddd;
-      background: #fff;
-    }
-
-    .panel-tab { width: 100%; }
-
-    #incidentPanel, #logPanel {
+    #incidentPanel {
       flex: 1 1 auto;
       min-height: 0;
       display: flex;
@@ -176,9 +164,7 @@
       overflow: hidden;
     }
 
-    #logPanel[hidden], #incidentPanel[hidden] { display: none; }
-
-    #resultsHeader, #logHeader {
+    #resultsHeader {
       flex: 0 0 auto;
       padding: 9px 12px;
       border-bottom: 1px solid #ddd;
@@ -244,7 +230,7 @@
     .trend-label { fill: #666; font-size: 9px; }
     .trend-value { fill: #444; font-size: 9px; font-weight: 700; }
 
-    #incidentList, #logList {
+    #incidentList {
       flex: 1 1 auto;
       min-height: 0;
       overflow-y: auto;
@@ -375,11 +361,6 @@
       </div>
     </div>
 
-    <div id="panelTabs">
-      <button id="incidentsTab" class="panel-tab active" type="button">Incidents</button>
-      <button id="logsTab" class="panel-tab" type="button">ETL Logs</button>
-    </div>
-
     <section id="incidentPanel">
       <div id="kpiPanel">
         <div class="chart-title" id="geographySummaryTitle">Geographic Summary of Incidents</div>
@@ -398,11 +379,6 @@
         <button id="downloadCsvBtn" type="button" disabled>Download CSV</button>
       </div>
       <div id="incidentList"></div>
-    </section>
-
-    <section id="logPanel" hidden>
-      <div id="logHeader">Latest ETL Run Summaries</div>
-      <div id="logList"></div>
     </section>
 
     <div id="status">Loading…</div>
