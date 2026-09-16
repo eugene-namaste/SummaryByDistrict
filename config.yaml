@@ -231,6 +231,21 @@ list:
       role: "date"
       type: "date_only"
 
+    - field: "PROP_USE_DESC"
+      role: "meta"
+
+    - field: "STRUC_TYPE_DESC"
+      role: "meta"
+
+    - field: "ACT_TAK1_DESC"
+      role: "meta"
+      
+    - field: "NERIS_CATEGORY"
+      role: "meta"
+      
+    - field: "NERIS_SUBCATEGORY"
+      role: "meta"
+
 # ------------------------------------------------------------
 # Incident details popup
 # ------------------------------------------------------------
