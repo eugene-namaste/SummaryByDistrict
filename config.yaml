@@ -175,8 +175,8 @@ geography:
   label: "Fire District"
   service_url: "https://services8.arcgis.com/UPC3S4iclp0mZ0N4/arcgis/rest/services/FireServiceDistricts_view/FeatureServer/0"
   selector_field: "districtid"
-  selector_label: "Senate Name"
-  all_label: "All Senate Districts"
+  selector_label: "District Name"
+  all_label: "All Districts"
 
   # Polygon styling. Change these values without editing app.js.
   polygon_style:
