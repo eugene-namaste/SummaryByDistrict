@@ -19,6 +19,37 @@ map:
   extent_expand_factor: 1.15
 
   # ----------------------------------------------------------
+  # Incident layer visibility
+  #
+  # 0 = no scale limit. This overrides any visibility range set on
+  # the hosted layer so the points/clusters draw at statewide scale.
+  # ----------------------------------------------------------
+  incident_layer:
+    min_scale: 0
+    max_scale: 0
+
+  # ----------------------------------------------------------
+  # Point clustering
+  #
+  # Zoomed out: incidents are grouped into numbered clusters.
+  # Zoomed in past max_scale: clusters break apart and the
+  # individual points draw with the renderer below.
+  # Set enabled: false to always show individual points.
+  # ----------------------------------------------------------
+  clustering:
+    enabled: true
+    radius: "55px"
+    min_size: "18px"
+    max_size: "40px"
+    max_scale: 750000          # larger number = points appear sooner while zooming in
+    symbol_style: "circle"
+    symbol_color: "#007ac2"
+    symbol_outline_color: "#ffffff"
+    symbol_outline_width: 1
+    label_color: "#ffffff"
+    label_size: "10px"
+
+  # ----------------------------------------------------------
   # Map symbology
   #
   # Supported renderer types:

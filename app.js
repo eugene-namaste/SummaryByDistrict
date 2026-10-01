@@ -25,10 +25,16 @@
   ], (ArcGISMap, MapView, FeatureLayer, Graphic) => {
 
     const layer = new FeatureLayer({
+      // Override scale dependency inherited from the hosted layer/view.
+      // The LayerView must stay active statewide so clustering can work.
+      minScale: Number(config.map?.incident_layer?.min_scale ?? 0),
+      maxScale: Number(config.map?.incident_layer?.max_scale ?? 0),
+
       url: config.data.service_url,
       outFields: ["*"],
       popupTemplate: buildPopupTemplate(config),
-      renderer: buildRenderer(config)
+      renderer: buildRenderer(config),
+      featureReduction: buildClusterReduction(config)
     });
 
     // Separate lookup layer used only to populate filter choices.
@@ -188,6 +194,59 @@
         lastUpdateEl.textContent = "Unavailable";
         totalRecordsEl.textContent = "Unavailable";
       }
+    }
+
+    function buildClusterReduction(cfg) {
+      const clusterConfig = cfg.map?.clustering;
+
+      if (!clusterConfig || clusterConfig.enabled === false) {
+        return null;
+      }
+
+      return {
+        type: "cluster",
+        clusterRadius: clusterConfig.radius || "55px",
+        clusterMinSize: clusterConfig.min_size || "18px",
+        clusterMaxSize: clusterConfig.max_size || "40px",
+
+        // Give clusters their own simple symbol instead of deriving cluster
+        // symbology from the layer's CRR_SUBCATEGORY UniqueValueRenderer.
+        symbol: {
+          type: "simple-marker",
+          style: clusterConfig.symbol_style || "circle",
+          color: clusterConfig.symbol_color || "#007ac2",
+          outline: {
+            color: clusterConfig.symbol_outline_color || "#ffffff",
+            width: Number(clusterConfig.symbol_outline_width ?? 1)
+          }
+        },
+
+        // ArcGIS automatically stops clustering when the view reaches this
+        // scale and displays the layer's normal point renderer instead.
+        maxScale: Number(clusterConfig.max_scale ?? 750000),
+
+        labelingInfo: [{
+          deconflictionStrategy: "none",
+          labelExpressionInfo: {
+            expression: "Text($feature.cluster_count, '#,###')"
+          },
+          symbol: {
+            type: "text",
+            color: clusterConfig.label_color || "#ffffff",
+            font: {
+              family: "Arial",
+              size: clusterConfig.label_size || "10px",
+              weight: "bold"
+            }
+          },
+          labelPlacement: "center-center"
+        }],
+
+        popupTemplate: {
+          title: "Incident cluster",
+          content: "This cluster contains {cluster_count} incidents."
+        }
+      };
     }
 
     function buildMarkerSymbol(symbolConfig = {}) {
