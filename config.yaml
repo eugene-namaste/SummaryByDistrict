@@ -215,11 +215,11 @@ filters:
 
 geography:
   summary_title: "Geographic Summary of Incidents"
-  label: "Fire District"
+  label: "County"
   service_url: "https://services8.arcgis.com/UPC3S4iclp0mZ0N4/arcgis/rest/services/FireServiceDistricts_view/FeatureServer/0"
   selector_field: "districtid"
-  selector_label: "District Name"
-  all_label: "All Districts"
+  selector_label: "County Name"
+  all_label: "All Counties"
 
   # Polygon styling. Change these values without editing app.js.
   polygon_style:
@@ -238,9 +238,9 @@ geography:
 
   display_fields:
     - field: "districtid"
-      label: "District ID"
+      label: "County ID"
     - field: "name"
-      label: "District Name"
+      label: "County Name"
 
 kpi:
   fire_filter_field: "CRR_CATEGORY"
