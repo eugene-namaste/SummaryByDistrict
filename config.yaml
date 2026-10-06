@@ -164,8 +164,7 @@ filters:
     type: "custom_date_range"
     field: "INC_DATE"
     label: "Custom Incident Date Range"
-    max_days: 730
-    hint: "Optional. Enter start and end dates (maximum 730 days). Using this disables the preset date filter above."
+    hint: "Optional. Enter any start and end dates. Using this disables the preset date filter above."
 
   - id: "fire_department"
     type: "unique_values"
@@ -173,6 +172,19 @@ filters:
     label: "Fire Department"
     multiple: true
     empty_means_all: true
+    # Canonical NERIS department names shown in the dropdown. Each choice can
+    # match both the current NERIS name and its historical NFIRS name.
+    value_groups:
+      "Kauai Fire Department":
+        - "Kauai Fire Department"
+        - "Kauai County Fire Department"
+      "County of Maui Department Of Fire & Public Safety":
+        - "County of Maui Department Of Fire & Public Safety"
+        - "Maui Fire Department"
+      "Honolulu Fire Department":
+        - "Honolulu Fire Department"
+      "Hawaii Fire Department":
+        - "Hawaii Fire Department"
     hint: "Ctrl/Cmd-click to select more than one. No selection = all."
 
   - id: "crr_category"

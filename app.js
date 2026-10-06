@@ -428,11 +428,13 @@
         throw new Error(`${filter.label || "Incident Date Range"}: end date cannot be before start date.`);
       }
 
-      const maxDays = Number(filter.max_days ?? 15);
-      const spanDays = Math.round((end - start) / 86400000);
+      if (filter.max_days !== undefined && filter.max_days !== null) {
+        const maxDays = Number(filter.max_days);
+        const spanDays = Math.round((end - start) / 86400000);
 
-      if (spanDays > maxDays) {
-        throw new Error(`${filter.label || "Incident Date Range"}: range cannot exceed ${maxDays} days.`);
+        if (spanDays > maxDays) {
+          throw new Error(`${filter.label || "Incident Date Range"}: range cannot exceed ${maxDays} days.`);
+        }
       }
 
       return { active: true, startDate, endDate };
@@ -601,6 +603,21 @@
         : `${filter.field} IS NOT NULL`;
     }
 
+    function expandUniqueFilterValues(filter, values) {
+      if (!filter?.value_groups) return values;
+
+      const expanded = [];
+      for (const value of values) {
+        const mapped = filter.value_groups[String(value)];
+        if (Array.isArray(mapped) && mapped.length) {
+          expanded.push(...mapped);
+        } else {
+          expanded.push(value);
+        }
+      }
+      return [...new Set(expanded.map(v => String(v)))];
+    }
+
     async function loadUniqueFilterValue(filter, { clearSelection = false } = {}) {
       if (!filter || filter.type !== "unique_values") return;
 
@@ -618,11 +635,21 @@
 
       const result = await filterLookupLayer.queryFeatures(q);
 
-      const values = [...new Set(
+      const sourceValues = [...new Set(
         result.features
           .map(f => f.attributes[filter.field])
           .filter(v => v !== null && v !== undefined && String(v).trim() !== "")
-      )].sort((a, b) => String(a).localeCompare(String(b)));
+          .map(v => String(v))
+      )];
+
+      const values = filter.value_groups
+        ? Object.keys(filter.value_groups).filter(key => {
+            const mapped = Array.isArray(filter.value_groups[key])
+              ? filter.value_groups[key].map(v => String(v))
+              : [String(key)];
+            return mapped.some(v => sourceValues.includes(v));
+          })
+        : sourceValues.sort((a, b) => a.localeCompare(b));
 
       const stillSelected = new Set(
         previousValues.filter(v => values.some(candidate => String(candidate) === String(v)))
@@ -633,7 +660,7 @@
       for (const value of values) {
         const option = document.createElement("option");
         option.value = value;
-        option.textContent = value;
+        option.textContent = filter.value_labels?.[String(value)] ?? value;
         option.selected = stillSelected.has(String(value));
         select.appendChild(option);
       }
@@ -698,7 +725,8 @@
 
         if (filter.type === "unique_values") {
           const values = selectedValues(control);
-          const clause = inClause(filter.field, values);
+          const queryValues = expandUniqueFilterValues(filter, values);
+          const clause = inClause(filter.field, queryValues);
           if (clause) clauses.push(clause);
         }
       }
@@ -1356,11 +1384,10 @@
           console.warn("Unable to draw selected polygon style:", styleErr);
         }
 
-        if (selectedGeographyFeature?.geometry) {
-          try { await view.goTo(selectedGeographyFeature.geometry.extent.expand(1.08), { duration: 650 }); } catch (e) { if (e.name !== "AbortError") console.error(e); }
-        } else if (currentFeatures.length) {
-          await zoomToFilteredExtent(where);
-        }
+        // Preserve the user's current map extent when any filter is applied.
+        // Filtering changes the incidents, geography overlay, KPIs, and charts only.
+        // Clicking an individual incident still intentionally zooms to that incident.
+        console.debug("Filters applied: preserving current map extent.");
 
         statusEl.textContent =
           `${currentFeatures.length.toLocaleString()} incident` +
