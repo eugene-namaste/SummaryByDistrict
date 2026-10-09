@@ -21,8 +21,9 @@
     "esri/Map",
     "esri/views/MapView",
     "esri/layers/FeatureLayer",
-    "esri/Graphic"
-  ], (ArcGISMap, MapView, FeatureLayer, Graphic) => {
+    "esri/Graphic",
+    "esri/geometry/geometryEngine"
+  ], (ArcGISMap, MapView, FeatureLayer, Graphic, geometryEngine) => {
 
     const layer = new FeatureLayer({
       // Override scale dependency inherited from the hosted layer/view.
@@ -109,28 +110,28 @@
     });
 
 
-    let selectedGeographyGraphic = null;
+    let selectedGeographyGraphics = [];
 
-    function drawSelectedGeography(feature) {
-      // Purely visual overlay. It never changes the geography FeatureLayer renderer
-      // and is intentionally called only after counts/charts finish updating.
-      if (selectedGeographyGraphic) {
-        view.graphics.remove(selectedGeographyGraphic);
-        selectedGeographyGraphic = null;
+    function drawSelectedGeographies(features) {
+      // Purely visual overlays. They never change the geography FeatureLayer renderer.
+      for (const graphic of selectedGeographyGraphics) view.graphics.remove(graphic);
+      selectedGeographyGraphics = [];
+
+      for (const feature of features || []) {
+        if (!feature?.geometry) continue;
+        const graphic = new Graphic({
+          geometry: feature.geometry,
+          symbol: polygonSymbol(selectedPolygonStyle, {
+            fillOpacity: 0.04,
+            outlineOpacity: 0.85,
+            width: 1.6,
+            fill: [0, 122, 194, 0.04],
+            outline: [0, 122, 194, 0.85]
+          })
+        });
+        selectedGeographyGraphics.push(graphic);
+        view.graphics.add(graphic);
       }
-      if (!feature?.geometry) return;
-
-      selectedGeographyGraphic = new Graphic({
-        geometry: feature.geometry,
-        symbol: polygonSymbol(selectedPolygonStyle, {
-          fillOpacity: 0.04,
-          outlineOpacity: 0.85,
-          width: 1.6,
-          fill: [0, 122, 194, 0.04],
-          outline: [0, 122, 194, 0.85]
-        })
-      });
-      view.graphics.add(selectedGeographyGraphic);
     }
 
     const filtersEl = document.getElementById("filters");
@@ -142,15 +143,21 @@
     const totalRecordsEl = document.getElementById("totalRecords");
     const geographySummaryEl = document.getElementById("geographySummary");
     const geographySummaryTitleEl = document.getElementById("geographySummaryTitle");
+    const fireCategorySummaryHeaderEl = document.getElementById("fireCategorySummaryHeader");
+    const fireCategorySummaryTableEl = document.getElementById("fireCategorySummaryTable");
     if (geographySummaryTitleEl) {
       geographySummaryTitleEl.textContent = geographyConfig.summary_title || "Geographic Summary of Incidents";
+    }
+    if (fireCategorySummaryHeaderEl) {
+      fireCategorySummaryHeaderEl.textContent = geographyConfig.fire_summary_title || "Fire Incidents by Geography and Category";
     }
 
     const filterControls = new globalThis.Map();
     let currentFeatures = [];
     let highlightHandle = null;
     let geographyControl = null;
-    let selectedGeographyFeature = null;
+    let selectedGeographyFeatures = [];
+    let allGeographyFeatures = [];
     
     if (downloadCsvBtn) downloadCsvBtn.addEventListener("click", downloadFilteredCsv);
 
@@ -465,6 +472,15 @@
         title.textContent = geographyConfig.selector_label || geographyConfig.label || "Geography";
         geographyControl = document.createElement("select");
         geographyControl.id = "geographySelector";
+        geographyControl.multiple = true;
+        geographyControl.size = Number(geographyConfig.selector_size || 7);
+        geographyControl.addEventListener("change", () => {
+          const options = Array.from(geographyControl.options);
+          const allOption = options.find(o => o.value === "");
+          const selectedSpecific = options.some(o => o.value !== "" && o.selected);
+          if (selectedSpecific && allOption) allOption.selected = false;
+          if (!options.some(o => o.selected) && allOption) allOption.selected = true;
+        });
         block.appendChild(title);
         block.appendChild(geographyControl);
         filtersEl.appendChild(block);
@@ -1124,20 +1140,33 @@
         ...getGeographyDisplayFields().map(item => item.field)
       ].filter(Boolean))];
 
+      const sortField = getGeographyDisplayFields()[0]?.field || selectorField;
       const result = await geographyLayer.queryFeatures({
         where: geographyConfig.where || "1=1",
         outFields,
-        returnGeometry: false,
-        orderByFields: [`${selectorField} ASC`]
+        returnGeometry: true,
+        outSpatialReference: view.spatialReference,
+        orderByFields: [`${sortField} ASC`]
       });
 
+      // Keep the geography list in the same order as the first configured
+      // display field. Numeric values sort numerically (1, 2, 3 ... 19),
+      // while text values use natural locale ordering.
+      allGeographyFeatures = (result.features || []).sort((a, b) => {
+        const av = a.attributes?.[sortField];
+        const bv = b.attributes?.[sortField];
+        const an = Number(av);
+        const bn = Number(bv);
+        if (Number.isFinite(an) && Number.isFinite(bn)) return an - bn;
+        return String(av ?? "").localeCompare(String(bv ?? ""), undefined, { numeric: true, sensitivity: "base" });
+      });
       geographyControl.innerHTML = "";
       const all = document.createElement("option");
       all.value = "";
       all.textContent = geographyConfig.all_label || `All ${geographyConfig.label || "Geographies"}`;
+      all.selected = true;
       geographyControl.appendChild(all);
-
-      for (const feature of result.features) {
+      for (const feature of allGeographyFeatures) {
         const label = feature.attributes?.[selectorField];
         const oid = feature.attributes?.[oidField];
         if (label == null || oid == null) continue;
@@ -1148,26 +1177,20 @@
       }
     }
 
-    async function getSelectedGeography() {
-      if (!geographyLayer || !geographyControl?.value) return null;
-
-      await geographyLayer.load();
+    function getSelectedGeographies() {
+      if (!geographyLayer || !geographyControl) return [];
+      const values = selectedValues(geographyControl).map(String);
+      if (!values.length || values.includes("")) return [];
+      const selectedIds = new Set(values);
       const oidField = geographyLayer.objectIdField;
-      const oid = Number(geographyControl.value);
-      const displayFields = getGeographyDisplayFields();
-      const outFields = [...new Set([
-        oidField,
-        geographyConfig.selector_field,
-        ...displayFields.map(item => item.field)
-      ].filter(Boolean))];
+      return allGeographyFeatures.filter(f => selectedIds.has(String(f.attributes?.[oidField])));
+    }
 
-      const result = await geographyLayer.queryFeatures({
-        objectIds: [oid],
-        outFields,
-        returnGeometry: true,
-        outSpatialReference: view.spatialReference
-      });
-      return result.features[0] || null;
+    function getSelectedGeographyGeometry(features) {
+      const geometries = (features || []).map(f => f.geometry).filter(Boolean);
+      if (!geometries.length) return null;
+      if (geometries.length === 1) return geometries[0];
+      return geometryEngine.union(geometries);
     }
 
     function renderGeographySummary(geographyFeature, fireCount) {
@@ -1190,17 +1213,15 @@
       addCard(config.kpi?.count_label || "Fire Incidents", Number(fireCount || 0).toLocaleString());
 
       const fields = getGeographyDisplayFields();
-      if (geographyFeature) {
+      const geographyFeatures = Array.isArray(geographyFeature) ? geographyFeature : (geographyFeature ? [geographyFeature] : []);
+      if (geographyFeatures.length === 1) {
         for (const item of fields) {
-          addCard(item.label || item.field, safeText(geographyFeature.attributes?.[item.field]));
+          addCard(item.label || item.field, safeText(geographyFeatures[0].attributes?.[item.field]));
         }
+      } else if (geographyFeatures.length > 1) {
+        addCard(geographyConfig.selector_label || geographyConfig.label || "Geography", `${geographyFeatures.length} selected`);
       } else {
-        const selectorLabel = geographyConfig.selector_label || geographyConfig.label || "Geography";
-        addCard(selectorLabel, geographyConfig.all_label || `All ${geographyConfig.label || "Geographies"}`);
-        for (const item of fields) {
-          if (item.field === geographyConfig.selector_field) continue;
-          addCard(item.label || item.field, "—");
-        }
+        addCard(geographyConfig.selector_label || geographyConfig.label || "Geography", geographyConfig.all_label || `All ${geographyConfig.label || "Geographies"}`);
       }
     }
 
@@ -1316,6 +1337,85 @@
       host.appendChild(svg);
     }
 
+    function renderSenateFireTable(features, selectedGeographies) {
+      if (!fireCategorySummaryTableEl) return;
+      fireCategorySummaryTableEl.replaceChildren();
+
+      const kpi = config.kpi || {};
+      const fireField = kpi.fire_filter_field || "CRR_CATEGORY";
+      const fireValue = String(kpi.fire_filter_value || "FIRE").toUpperCase();
+      const categoryField = kpi.category_field || "CRR_SUBCATEGORY";
+      const nameField = geographyConfig.table_label_field || "senate_nam";
+      const idField = geographyConfig.selector_field;
+      const sortField = getGeographyDisplayFields()[0]?.field || idField;
+      const sourceRows = selectedGeographies?.length ? selectedGeographies : allGeographyFeatures;
+      const rows = [...sourceRows].sort((a, b) => {
+        const av = a.attributes?.[sortField];
+        const bv = b.attributes?.[sortField];
+        const an = Number(av);
+        const bn = Number(bv);
+        if (Number.isFinite(an) && Number.isFinite(bn)) return an - bn;
+        return String(av ?? "").localeCompare(String(bv ?? ""), undefined, { numeric: true, sensitivity: "base" });
+      });
+      const fireFeatures = features.filter(f => String(f.attributes?.[fireField] ?? "").toUpperCase() === fireValue);
+
+      const categories = [...new Set(fireFeatures.map(f => {
+        const raw = f.attributes?.[categoryField];
+        return raw ? String(raw).replaceAll("_", " ") : "Unclassified";
+      }))].sort((a, b) => a.localeCompare(b));
+
+      const table = document.createElement("table");
+      table.className = "senate-fire-table";
+      const thead = document.createElement("thead");
+      const headRow = document.createElement("tr");
+      [geographyConfig.table_row_label || "Senate District", ...categories, "Total"].forEach(label => {
+        const th = document.createElement("th");
+        th.textContent = label;
+        headRow.appendChild(th);
+      });
+      thead.appendChild(headRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+      for (const district of rows) {
+        const counts = new Map(categories.map(c => [c, 0]));
+        let total = 0;
+        for (const feature of fireFeatures) {
+          if (!feature.geometry || !district.geometry || !geometryEngine.intersects(feature.geometry, district.geometry)) continue;
+          const raw = feature.attributes?.[categoryField];
+          const category = raw ? String(raw).replaceAll("_", " ") : "Unclassified";
+          counts.set(category, (counts.get(category) || 0) + 1);
+          total += 1;
+        }
+
+        const tr = document.createElement("tr");
+        const labelCell = document.createElement("th");
+        labelCell.scope = "row";
+        labelCell.textContent = safeText(district.attributes?.[nameField] ?? district.attributes?.[idField]);
+        tr.appendChild(labelCell);
+        for (const category of categories) {
+          const td = document.createElement("td");
+          td.textContent = Number(counts.get(category) || 0).toLocaleString();
+          tr.appendChild(td);
+        }
+        const totalCell = document.createElement("td");
+        totalCell.className = "table-total";
+        totalCell.textContent = total.toLocaleString();
+        tr.appendChild(totalCell);
+        tbody.appendChild(tr);
+      }
+      table.appendChild(tbody);
+
+      if (!categories.length) {
+        const empty = document.createElement("div");
+        empty.className = "table-empty";
+        empty.textContent = "No fire incidents for the current filters.";
+        fireCategorySummaryTableEl.appendChild(empty);
+      } else {
+        fireCategorySummaryTableEl.appendChild(table);
+      }
+    }
+
     function updateKpis(features, geographyFeature) {
       const kpi = config.kpi || {};
       const fireField = kpi.fire_filter_field || "NERIS_CATEGORY";
@@ -1360,8 +1460,8 @@
 
       try {
         const where = buildWhere();
-        selectedGeographyFeature = await getSelectedGeography();
-        const geographyGeometry = selectedGeographyFeature?.geometry || null;
+        selectedGeographyFeatures = getSelectedGeographies();
+        const geographyGeometry = getSelectedGeographyGeometry(selectedGeographyFeatures);
 
         layer.definitionExpression = where;
         const layerView = await view.whenLayerView(layer);
@@ -1376,10 +1476,14 @@
 
         view.closePopup();
         renderList(currentFeatures);
-        updateKpis(currentFeatures, selectedGeographyFeature);
+        updateKpis(
+          currentFeatures,
+          selectedGeographyFeatures.length === 1 ? selectedGeographyFeatures[0] : null
+        );
+        renderSenateFireTable(currentFeatures, selectedGeographyFeatures);
 
         try {
-          drawSelectedGeography(selectedGeographyFeature);
+          drawSelectedGeographies(selectedGeographyFeatures);
         } catch (styleErr) {
           console.warn("Unable to draw selected polygon style:", styleErr);
         }
@@ -1401,7 +1505,7 @@
     }
 
     async function clearFilters() {
-      if (geographyControl) geographyControl.value = "";
+      if (geographyControl) Array.from(geographyControl.options).forEach(o => { o.selected = o.value === ""; });
       for (const filter of config.filters || []) {
         const control = filterControls.get(filter.id);
         if (!control) continue;

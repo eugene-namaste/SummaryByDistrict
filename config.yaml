@@ -14,7 +14,7 @@ map:
   initial_center:
     - -157.7
     - 20.8
-  initial_zoom: 7
+  initial_zoom: 6
   selection_zoom: 16
   extent_expand_factor: 1.15
 
@@ -215,11 +215,15 @@ filters:
 
 geography:
   summary_title: "Geographic Summary of Incidents"
+  fire_summary_title: "Fire Incidents by County and Category"
   label: "County"
   service_url: "https://services8.arcgis.com/UPC3S4iclp0mZ0N4/arcgis/rest/services/FireServiceDistricts_view/FeatureServer/0"
   selector_field: "districtid"
-  selector_label: "County Name"
+  selector_label: "County(ies)"
+  selector_size: 3
   all_label: "All Counties"
+  table_label_field: "name"
+  table_row_label: "County Name"
 
   # Polygon styling. Change these values without editing app.js.
   polygon_style:
@@ -238,7 +242,7 @@ geography:
 
   display_fields:
     - field: "districtid"
-      label: "County ID"
+      label: "County"
     - field: "name"
       label: "County Name"
 
